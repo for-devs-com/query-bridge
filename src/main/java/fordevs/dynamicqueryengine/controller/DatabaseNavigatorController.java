@@ -3,6 +3,7 @@ package fordevs.dynamicqueryengine.controller;
 import fordevs.dynamicqueryengine.config.DataSourceContextService;
 import fordevs.dynamicqueryengine.config.DynamicDataSourceManager;
 import fordevs.dynamicqueryengine.dto.DatabaseCredentials;
+import fordevs.dynamicqueryengine.service.SchemaDiscoveryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,11 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +29,16 @@ public class DatabaseNavigatorController {
     private DatabaseCredentials credentials;
 
 
-    // Conecta a la base de datos con DataSources Dinámicos
+    public SchemaDiscoveryService schemaDiscoveryService;
+
+    public DatabaseNavigatorController(SchemaDiscoveryService schemaDiscoveryService) {
+        this.schemaDiscoveryService = schemaDiscoveryService;
+    }
+
+
+    /**
+     * Conecta a la base de datos con DataSources Dinámicos
+     */
     @PostMapping("/connect-database")
     public ResponseEntity<String> connectToDatabaseDynamically(@RequestBody DatabaseCredentials credentials) {
         this.credentials = credentials; // Establece las credenciales para usarlas en otros métodos
@@ -46,7 +52,9 @@ public class DatabaseNavigatorController {
             String key = dataSourceManager.getKey(credentials);
             // Obtiene el JdbcTemplate para la base de datos y lo establece como el actual
             JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key);
+            // Establece el JdbcTemplate actual en el contexto del DataSource
             dataSourceContextService.setCurrentTemplate(jdbcTemplate);
+            // Devuelve una respuesta indicando la conexión exitosa
             return ResponseEntity.ok("Conexión exitosa a la base de datos: " + credentials.getDatabaseName());
         } else {
             // Si la conexión falla, devuelve una respuesta indicando el fallo
@@ -55,8 +63,10 @@ public class DatabaseNavigatorController {
     }
 
 
-    // Obtiene las tablas de la base de datos
-    @GetMapping("/tables")
+    // Obtiene las tablas de la base de datos con DataSources Dinámicos y JdbcTemplate directamente (sin el servicio SchemaDiscoveryService)
+    // Este método no es recomendable, ya que se debería delegar la lógica de obtener las tablas a un servicio específico
+    // para mantener la cohesión y reutilización del código (como se hace en el método listSchema)
+   /* @GetMapping("/tables")
     public ResponseEntity<String> listTables() {
         if (this.credentials == null) {
             log.error("Credentials must be set before calling this method.");
@@ -67,7 +77,6 @@ public class DatabaseNavigatorController {
         try {
 
             String key = dataSourceManager.getKey(this.credentials); // Obtiene la clave para el DataSource
-            //JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key); // Se obtiene el JdbcTemplate para la base de datos
             JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key); // Se crea y prueba la conexión con las credenciales proporcionadas
             if (jdbcTemplate == null) {
                 log.error("JdbcTemplate is null for key: {}", key);
@@ -92,11 +101,32 @@ public class DatabaseNavigatorController {
             log.error("Error listing tables", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }*/
+
+    /**
+     * Obtiene las tablas de la base de datos con DataSources Dinámicos y el servicio SchemaDiscoveryService
+     * al que se delega la lógica para obtener las tablas manteniendo la cohesión y reutilización del código
+     */
+    @GetMapping("/listTables")
+    public ResponseEntity<String> listSchema() {
+        // Verifica que las credenciales estén establecidas
+        if (this.credentials == null) {
+            log.error("Credentials must be set before calling this method.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Credentials are not set.");
+        }
+        try {
+            // Obtiene las tablas de la base de datos
+            List<String> tables = schemaDiscoveryService.listTables(this.credentials);
+            log.info("Tables: {}", tables);
+            return ResponseEntity.ok(tables.toString());
+        } catch (Exception e) {
+            log.error("Error listing tables", e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
-
     // Obtiene las columnas de una tabla
-    @GetMapping("/columns/{tableName}")
+    /*@GetMapping("/columns/{tableName}")
     public ResponseEntity<List<Map<String, Object>>> listColumns(@PathVariable String tableName) {
         String key = dataSourceManager.getKey(this.credentials); // Obtiene la clave para el DataSource
         JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key); // Se crea y prueba la conexión con las credenciales proporcionadas
@@ -126,6 +156,25 @@ public class DatabaseNavigatorController {
         } catch (Exception e) {
             // Se debería manejar la excepción de manera más específica según el caso
             e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }*/
+
+    /**
+     * Obtiene las columnas de una tabla con DataSources Dinámicos y el servicio SchemaDiscoveryService
+     */
+    @GetMapping("/columns/{tableName}")
+    public ResponseEntity<List<Map<String, Object>>> listColumns(@PathVariable String tableName) {
+        try {
+
+            String key = dataSourceManager.getKey(this.credentials); // Obtiene la clave para el DataSource
+            List<Map<String, Object>> columns = schemaDiscoveryService.listColumns(tableName, key); // Obtiene las columnas de la tabla
+            return ResponseEntity.ok(columns); // Devuelve las columnas
+        } catch (SQLException e) {
+            log.error("Error listing columns for table: {}", tableName, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        } catch (Exception e) {
+            log.error("Unexpected error occurred", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
