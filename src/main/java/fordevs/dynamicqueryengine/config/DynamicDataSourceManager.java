@@ -3,7 +3,6 @@ package fordevs.dynamicqueryengine.config;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import fordevs.dynamicqueryengine.dto.DatabaseCredentials;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -25,16 +24,15 @@ public class DynamicDataSourceManager {
 
     public boolean createAndTestConnection(DatabaseCredentials credentials) {
         String key = generateKeyForUserDataSource(credentials);
-        JdbcTemplate jdbcTemplate = dataSourceCache.computeIfAbsent(key, k -> new JdbcTemplate(createDataSource(credentials)));
-
+        JdbcTemplate jdbcTemplate = dataSourceCache.computeIfAbsent(key, k -> {
+            DataSource dataSource = createDataSource(credentials);
+            return new JdbcTemplate(dataSource);
+        });
         if (testConnection(jdbcTemplate)) {
-
             DataSourceContextService.setCurrentTemplate(jdbcTemplate);
-
             return true;
         } else {
-            dataSourceCache.remove(key);
-            dataSourceContextService.clear();
+            closeDataSource(key);
             return false;
         }
 
@@ -73,6 +71,19 @@ public class DynamicDataSourceManager {
     public String getKey(DatabaseCredentials credentials) {
         return generateKeyForUserDataSource(credentials);
     }
+
+    public void closeDataSource(String key) {
+        JdbcTemplate jdbcTemplate = dataSourceCache.remove(key);
+        DataSourceContextService.clear();
+        if (jdbcTemplate != null) {
+            DataSource dataSource = jdbcTemplate.getDataSource();
+            if (dataSource instanceof HikariDataSource) {
+                ((HikariDataSource) dataSource).close();
+            }
+        }
+    }
+
+
 
 }
 
