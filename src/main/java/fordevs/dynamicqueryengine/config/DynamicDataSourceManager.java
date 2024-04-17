@@ -55,7 +55,7 @@ public class DynamicDataSourceManager {
 
     private DataSource createDataSource(DatabaseCredentials credentials) {
         HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setDriverClassName("org.postgresql.Driver");
+        hikariConfig.setDriverClassName("org.postgresql.Driver"); // TODO: Support other databases and change Driver Dynamically
         hikariConfig.setJdbcUrl("jdbc:postgresql://" + credentials.getHost() + ":" + credentials.getPort() + "/" + credentials.getDatabaseName());
         hikariConfig.setUsername(credentials.getUser());
         hikariConfig.setPassword(credentials.getPassword());
@@ -64,6 +64,7 @@ public class DynamicDataSourceManager {
     }
 
      public String generateKeyForUserDataSource(DatabaseCredentials credentials) {
+        // TODO: Implement a better key generation
         return credentials.getDatabaseManager() + "-" + credentials.getHost() + "-" + credentials.getPort() + "-" + credentials.getDatabaseName() + "-" + credentials.getUser() + "-" + credentials.getPassword();
 
     }
@@ -82,8 +83,5 @@ public class DynamicDataSourceManager {
             }
         }
     }
-
-
-
 }
 
