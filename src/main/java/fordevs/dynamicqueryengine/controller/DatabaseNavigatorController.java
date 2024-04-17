@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @Slf4j
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping("/api")
 public class DatabaseNavigatorController {
@@ -126,7 +127,8 @@ public class DatabaseNavigatorController {
     }
 
     // Obtiene las columnas de una tabla
-    /*@GetMapping("/columns/{tableName}")
+    /*
+    @GetMapping("/columns/{tableName}")
     public ResponseEntity<List<Map<String, Object>>> listColumns(@PathVariable String tableName) {
         String key = dataSourceManager.getKey(this.credentials); // Obtiene la clave para el DataSource
         JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key); // Se crea y prueba la conexión con las credenciales proporcionadas
@@ -158,24 +160,26 @@ public class DatabaseNavigatorController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-    }*/
+    }
+    */
 
     /**
      * Obtiene las columnas de una tabla con DataSources Dinámicos y el servicio SchemaDiscoveryService
-     */
+     **/
     @GetMapping("/columns/{tableName}")
-    public ResponseEntity<List<Map<String, Object>>> listColumns(@PathVariable String tableName) {
+    public ResponseEntity<String> listColumns(@PathVariable String tableName) {
         try {
 
             String key = dataSourceManager.getKey(this.credentials); // Obtiene la clave para el DataSource
             List<Map<String, Object>> columns = schemaDiscoveryService.listColumns(tableName, key); // Obtiene las columnas de la tabla
-            return ResponseEntity.ok(columns); // Devuelve las columnas
+            return ResponseEntity.ok(columns.toString()); // Devuelve las columnas
         } catch (SQLException e) {
             log.error("Error listing columns for table: {}", tableName, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         } catch (Exception e) {
-            log.error("Unexpected error occurred", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+
+            log.error("Credentials must be set before calling this method.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Credentials are not set.");
         }
     }
 
@@ -188,8 +192,15 @@ public class DatabaseNavigatorController {
             List<Map<String, Object>> result = jdbcTemplate.queryForList(query);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
+            log.error("Error executing query", e.toString());
             // Se debería manejar la excepción de manera más específica según el caso
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+
+    // TODO: Implementar otros métodos para obtener información de la base de datos, como las vistas, procedimientos almacenados, etc.
+    // TODO: Implementar métodos para ejecutar consultas, insertar, actualizar y eliminar registros, etc.
+    // TODO: Implementar Metodos para cambiar el contexto para conectarme a otra base de datos con una nueva conexión o una existente en el contexto actual
+    // TODO: Implementar métodos para cerrar la conexión con la base de datos y liberar los recursos utilizados
 }
