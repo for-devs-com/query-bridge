@@ -2,6 +2,7 @@ package fordevs.dynamicqueryengine.service;
 
 import fordevs.dynamicqueryengine.config.DynamicDataSourceManager;
 import fordevs.dynamicqueryengine.dto.DatabaseCredentials;
+import fordevs.dynamicqueryengine.dto.DynamicTableData;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -74,4 +75,31 @@ public class SchemaDiscoveryService {
             return columnList;
         });
     }
+
+    /**
+     * Obtiene los datos de una tabla con paginación y el conteo total de filas.
+     */
+    public DynamicTableData getTableDataWithPagination(String tableName, DatabaseCredentials credentials, int page, int size) throws SQLException {
+        String key = dataSourceManager.getKey(credentials);
+        JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key);
+
+        if (jdbcTemplate == null) {
+            throw new SQLException("Unable to obtain JdbcTemplate for key: " + key);
+        }
+
+        String dataSql = String.format("SELECT * FROM %s LIMIT %d OFFSET %d", tableName, size, page * size);
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(dataSql);
+
+        String countSql = String.format("SELECT COUNT(*) FROM %s", tableName);
+        Integer totalCount = jdbcTemplate.queryForObject(countSql, Integer.class);
+
+        DynamicTableData tableData = new DynamicTableData();
+        tableData.setRows(rows);
+        tableData.setTotalRows(totalCount);
+
+        // Return the populated DynamicTableData object
+        return tableData;
+    }
+
+
 }
