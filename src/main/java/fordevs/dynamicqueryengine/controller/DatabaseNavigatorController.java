@@ -3,6 +3,7 @@ package fordevs.dynamicqueryengine.controller;
 import fordevs.dynamicqueryengine.config.DataSourceContextService;
 import fordevs.dynamicqueryengine.config.DynamicDataSourceManager;
 import fordevs.dynamicqueryengine.dto.DatabaseCredentials;
+import fordevs.dynamicqueryengine.dto.DynamicTableData;
 import fordevs.dynamicqueryengine.service.SchemaDiscoveryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +31,8 @@ public class DatabaseNavigatorController {
     private DataSourceContextService dataSourceContextService;
 
     private DatabaseCredentials credentials;
+
+    private DynamicTableData tableData;
 
 
     public SchemaDiscoveryService schemaDiscoveryService;
@@ -64,124 +69,86 @@ public class DatabaseNavigatorController {
     }
 
 
-    // Obtiene las tablas de la base de datos con DataSources Dinámicos y JdbcTemplate directamente (sin el servicio SchemaDiscoveryService)
-    // Este método no es recomendable, ya que se debería delegar la lógica de obtener las tablas a un servicio específico
-    // para mantener la cohesión y reutilización del código (como se hace en el método listSchema)
-   /* @GetMapping("/tables")
-    public ResponseEntity<String> listTables() {
-        if (this.credentials == null) {
-            log.error("Credentials must be set before calling this method.");
 
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Credentials are not set.");
-        }
-
-        try {
-
-            String key = dataSourceManager.getKey(this.credentials); // Obtiene la clave para el DataSource
-            JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key); // Se crea y prueba la conexión con las credenciales proporcionadas
-            if (jdbcTemplate == null) {
-                log.error("JdbcTemplate is null for key: {}", key);
-                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-            }else {
-                log.info("JdbcTemplate is not null for key: {}", key);
-                log.info("JdbcTemplate: {}", jdbcTemplate);
-            }
-
-            List<String> tables = jdbcTemplate.execute((Connection con) -> {
-                List<String> tableList = new ArrayList<>();
-                DatabaseMetaData metaData = con.getMetaData();
-                try (ResultSet rs = metaData.getTables(null, "public", "%", new String[]{"TABLE"})) {
-                    while (rs.next()) {
-                        tableList.add(rs.getString("TABLE_NAME"));
-                    }
-                }
-                return tableList;
-            });
-            return ResponseEntity.ok(tables.toString());
-        } catch (Exception e) {
-            log.error("Error listing tables", e);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }*/
 
     /**
      * Obtiene las tablas de la base de datos con DataSources Dinámicos y el servicio SchemaDiscoveryService
      * al que se delega la lógica para obtener las tablas manteniendo la cohesión y reutilización del código
      */
     @GetMapping("/listTables")
-    public ResponseEntity<String> listSchema() {
+    public ResponseEntity<List<String>> listSchema() {
         // Verifica que las credenciales estén establecidas
         if (this.credentials == null) {
             log.error("Credentials must be set before calling this method.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Credentials are not set.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonList("Credentials are not set."));
         }
         try {
             // Obtiene las tablas de la base de datos
             List<String> tables = schemaDiscoveryService.listTables(this.credentials);
             log.info("Tables: {}", tables);
-            return ResponseEntity.ok(tables.toString());
+            return ResponseEntity.ok(tables);
         } catch (Exception e) {
             log.error("Error listing tables", e);
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // Obtiene las columnas de una tabla
-    /*
-    @GetMapping("/columns/{tableName}")
-    public ResponseEntity<List<Map<String, Object>>> listColumns(@PathVariable String tableName) {
-        String key = dataSourceManager.getKey(this.credentials); // Obtiene la clave para el DataSource
-        JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key); // Se crea y prueba la conexión con las credenciales proporcionadas
-        if (jdbcTemplate == null) {
-            log.error("JdbcTemplate is null for key: {}", key);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }else {
-            log.info("JdbcTemplate is not null for key: {}", key);
-            log.info("JdbcTemplate: {}", jdbcTemplate);
-        }
-        try {
-            List<Map<String, Object>> columns = jdbcTemplate.execute((Connection con) -> {
-                List<Map<String, Object>> columnList = new ArrayList<>();
-                DatabaseMetaData metaData = con.getMetaData();
-                try (ResultSet rs = metaData.getColumns(null, null, tableName, "%")) {
-                    while (rs.next()) {
-                        Map<String, Object> column = new HashMap<>();
-                        column.put("COLUMN_NAME", rs.getString("COLUMN_NAME"));
-                        column.put("TYPE_NAME", rs.getString("TYPE_NAME"));
-                        column.put("COLUMN_SIZE", rs.getInt("COLUMN_SIZE"));
-                        columnList.add(column);
-                    }
-                }
-                return columnList;
-            });
-            return ResponseEntity.ok(columns);
-        } catch (Exception e) {
-            // Se debería manejar la excepción de manera más específica según el caso
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
-    */
 
     /**
      * Obtiene las columnas de una tabla con DataSources Dinámicos y el servicio SchemaDiscoveryService
      **/
     @GetMapping("/columns/{tableName}")
-    public ResponseEntity<String> listColumns(@PathVariable String tableName) {
+    public ResponseEntity<List<Map<String, Object>>> listColumns(@PathVariable String tableName) {
         try {
 
             String key = dataSourceManager.getKey(this.credentials); // Obtiene la clave para el DataSource
             List<Map<String, Object>> columns = schemaDiscoveryService.listColumns(tableName, key); // Obtiene las columnas de la tabla
-            return ResponseEntity.ok(columns.toString()); // Devuelve las columnas
+            return ResponseEntity.ok(columns); // Devuelve las columnas
         } catch (SQLException e) {
             log.error("Error listing columns for table: {}", tableName, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         } catch (Exception e) {
 
             log.error("Credentials must be set before calling this method.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Credentials are not set.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
+
+    @GetMapping("/data/{tableName}")
+    public ResponseEntity<?> getTableData(
+            @PathVariable String tableName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        if (this.credentials == null) {
+            log.error("Credentials must be set before calling this method.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Credentials are not set");
+        }
+
+        try {
+            // Obtiene los datos de la tabla con paginación
+            DynamicTableData tableData = schemaDiscoveryService.getTableDataWithPagination(tableName, this.credentials, page, size);
+            //List<String> tableData = schemaDiscoveryService.getTableDataWithPagination(tableName, , page, size);
+
+            // Crea una respuesta que incluye los datos y la información de paginación
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", tableData.getRows());
+            response.put("currentPage", page);
+            response.put("pageSize", size);
+            response.put("totalRows", tableData.getTotalRows());
+
+            log.info("Table data: {}", response);
+
+            // Devuelve la respuesta
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error obtaining data from table: " + tableName, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving table data: " + e.getMessage());
+        }
+    }
+
+
+
 
     // Ejecuta una consulta
     @PostMapping("/executeQuery")
