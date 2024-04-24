@@ -14,6 +14,9 @@ public class DynamicTableData {
     private String tableName;
     private List<Map<String, Object>> rows;
     private int totalRows;
-    private List<String> columns;
+    private List<Map<String, Object>> columns;
     private String credentialsKeys;
+    private String credentials;
+    private int currentPage;
+    private int pageSize;
 }
