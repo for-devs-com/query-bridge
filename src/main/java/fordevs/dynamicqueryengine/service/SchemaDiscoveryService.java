@@ -3,7 +3,10 @@ package fordevs.dynamicqueryengine.service;
 import fordevs.dynamicqueryengine.config.DynamicDataSourceManager;
 import fordevs.dynamicqueryengine.dto.DatabaseCredentials;
 import fordevs.dynamicqueryengine.dto.DynamicTableData;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class SchemaDiscoveryService {
 
     private final DynamicDataSourceManager dataSourceManager;
@@ -79,27 +83,43 @@ public class SchemaDiscoveryService {
     /**
      * Obtiene los datos de una tabla con paginación y el conteo total de filas.
      */
-    public DynamicTableData getTableDataWithPagination(String tableName, DatabaseCredentials credentials, int page, int size) throws SQLException {
-        String key = dataSourceManager.getKey(credentials);
-        JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key);
+    public ResponseEntity<DynamicTableData> getTableDataWithPagination(String tableName, DatabaseCredentials credentials, int page, int size) throws SQLException {
+        try {
 
-        if (jdbcTemplate == null) {
-            throw new SQLException("Unable to obtain JdbcTemplate for key: " + key);
+            String key = dataSourceManager.getKey(credentials);
+            JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key);
+
+            if (jdbcTemplate == null) {
+                throw new SQLException("Unable to obtain JdbcTemplate for key: " + key);
+            }
+
+            // Obtiene los datos de las filas.
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                    "SELECT * FROM " + tableName + " LIMIT ? OFFSET ?", size, page * size
+            );
+
+            // Obtiene los metadatos de las columnas.
+            List<Map<String, Object>> columns = listColumns(tableName, key);
+
+            int totalRows = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + tableName, Integer.class);
+
+
+            DynamicTableData response = new DynamicTableData();
+            response.setRows(rows);
+            response.setColumns(columns);
+            response.setTotalRows(totalRows);
+            response.setTableName(tableName);
+            response.setPageSize(size);
+            response.setCurrentPage(page);
+
+
+            // Return the populated DynamicTableData object
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+
+            log.error("Error obtaining data from table: " + tableName, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
 
-        String dataSql = String.format("SELECT * FROM %s LIMIT %d OFFSET %d", tableName, size, page * size);
-        List<Map<String, Object>> rows = jdbcTemplate.queryForList(dataSql);
-
-        String countSql = String.format("SELECT COUNT(*) FROM %s", tableName);
-        Integer totalCount = jdbcTemplate.queryForObject(countSql, Integer.class);
-
-        DynamicTableData tableData = new DynamicTableData();
-        tableData.setRows(rows);
-        tableData.setTotalRows(totalCount);
-
-        // Return the populated DynamicTableData object
-        return tableData;
     }
-
-
 }
