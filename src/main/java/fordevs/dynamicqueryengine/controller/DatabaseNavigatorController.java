@@ -127,17 +127,21 @@ public class DatabaseNavigatorController {
 
         try {
             // Obtiene los datos de la tabla con paginación
-            DynamicTableData tableData = schemaDiscoveryService.getTableDataWithPagination(tableName, this.credentials, page, size);
+            ResponseEntity<DynamicTableData> responseEntity = schemaDiscoveryService.getTableDataWithPagination(tableName, this.credentials, page, size);
+            DynamicTableData tableData = responseEntity.getBody();
             //List<String> tableData = schemaDiscoveryService.getTableDataWithPagination(tableName, , page, size);
+
 
             // Crea una respuesta que incluye los datos y la información de paginación
             Map<String, Object> response = new HashMap<>();
-            response.put("data", tableData.getRows());
+            response.put("rows", tableData.getRows());
+            response.put("columns", tableData.getColumns());
             response.put("currentPage", page);
             response.put("pageSize", size);
             response.put("totalRows", tableData.getTotalRows());
+            response.put("tableName", tableName);
 
-            log.info("Table data: {}", response);
+            log.info("Table Response Data: {}", response);
 
             // Devuelve la respuesta
             return ResponseEntity.ok(response);
