@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * DTO class to hold dynamic table data.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
