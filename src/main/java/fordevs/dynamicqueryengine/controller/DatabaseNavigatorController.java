@@ -7,6 +7,7 @@ import fordevs.dynamicqueryengine.dto.DynamicTableData;
 import fordevs.dynamicqueryengine.service.SchemaDiscoveryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -25,114 +26,132 @@ import java.util.Map;
 public class DatabaseNavigatorController {
 
     @Autowired
-    public DynamicDataSourceManager dataSourceManager;
+    private DynamicDataSourceManager dataSourceManager;
 
     @Autowired
     private DataSourceContextService dataSourceContextService;
 
+    @Autowired
+    private SchemaDiscoveryService schemaDiscoveryService;
+
+    @Autowired
+    private Environment environment;
+
     private DatabaseCredentials credentials;
 
-    private DynamicTableData tableData;
-
-
-    public SchemaDiscoveryService schemaDiscoveryService;
-
-    public DatabaseNavigatorController(SchemaDiscoveryService schemaDiscoveryService) {
-        this.schemaDiscoveryService = schemaDiscoveryService;
-    }
-
-
     /**
-     * Conecta a la base de datos con DataSources Dinámicos
+     * Connects to the database using dynamic data sources.
+     *
+     * @param credentials The database credentials provided in the request body.
+     * @return ResponseEntity with connection status.
      */
     @PostMapping("/connect-database")
     public ResponseEntity<String> connectToDatabaseDynamically(@RequestBody DatabaseCredentials credentials) {
-        this.credentials = credentials; // Establece las credenciales para usarlas en otros métodos
-        // Intenta crear y probar la conexión con las credenciales proporcionadas
-        boolean isConnected = dataSourceManager.createAndTestConnection(credentials);
+        // Validate the credentials
+        if (!validateCredentials(credentials)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid credentials provided");
+        }
 
+        this.credentials = credentials; // Store the credentials for use in other methods
 
-        // Verifica la conexión y devuelve una respuesta adecuada
-        if (isConnected) {
-            // Obtiene la clave para el DataSource
+        try {
+            // Try to create and test the connection with the provided credentials
+            if (!dataSourceManager.createAndTestConnection(credentials)) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to connect to database: " + credentials.getDatabaseName());
+            }
+
+            // Get the key for the DataSource
             String key = dataSourceManager.getKey(credentials);
-            // Obtiene el JdbcTemplate para la base de datos y lo establece como el actual
+            // Get the JdbcTemplate for the database and set it as the current template
             JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key);
-            // Establece el JdbcTemplate actual en el contexto del DataSource
+            // Set the current JdbcTemplate in the data source context
             dataSourceContextService.setCurrentTemplate(jdbcTemplate);
-            // Devuelve una respuesta indicando la conexión exitosa
-            return ResponseEntity.ok("Conexión exitosa a la base de datos: " + credentials.getDatabaseName());
-        } else {
-            // Si la conexión falla, devuelve una respuesta indicando el fallo
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al conectar con la base de datos: " + credentials.getDatabaseName());
+            return ResponseEntity.ok("Connected successfully to database: " + credentials.getDatabaseName());
+        } catch (Exception e) {
+            log.error("Error connecting to the database", e);
+            return handleException(e, "Error connecting to the database: ");
         }
     }
 
-
-
-
     /**
-     * Obtiene las tablas de la base de datos con DataSources Dinámicos y el servicio SchemaDiscoveryService
-     * al que se delega la lógica para obtener las tablas manteniendo la cohesión y reutilización del código
+     * Lists the tables in the database using dynamic data sources and SchemaDiscoveryService.
+     *
+     * @return ResponseEntity with the list of tables.
      */
     @GetMapping("/listTables")
     public ResponseEntity<List<String>> listSchema() {
-        // Verifica que las credenciales estén establecidas
-        if (this.credentials == null) {
-            log.error("Credentials must be set before calling this method.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonList("Credentials are not set."));
+        // Validate the credentials
+        ResponseEntity<List<String>> errorResponse = validateCredentials();
+        if (errorResponse != null) {
+            return errorResponse;
         }
+
         try {
-            // Obtiene las tablas de la base de datos
+            // Get the list of tables in the database
             List<String> tables = schemaDiscoveryService.listTables(this.credentials);
             log.info("Tables: {}", tables);
             return ResponseEntity.ok(tables);
         } catch (Exception e) {
             log.error("Error listing tables", e);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return handleException(e, "Error listing tables: ");
         }
     }
-
 
     /**
-     * Obtiene las columnas de una tabla con DataSources Dinámicos y el servicio SchemaDiscoveryService
-     **/
+     * Lists the columns of a table using dynamic data sources and SchemaDiscoveryService.
+     *
+     * @param tableName The name of the table.
+     * @return ResponseEntity with the list of columns.
+     */
     @GetMapping("/columns/{tableName}")
     public ResponseEntity<List<Map<String, Object>>> listColumns(@PathVariable String tableName) {
+        // Validate the credentials
+        ResponseEntity<List<Map<String, Object>>> errorResponse = validateCredentials();
+        if (errorResponse != null) {
+            return errorResponse;
+        }
+
         try {
-
-            String key = dataSourceManager.getKey(this.credentials); // Obtiene la clave para el DataSource
-            List<Map<String, Object>> columns = schemaDiscoveryService.listColumns(tableName, key); // Obtiene las columnas de la tabla
-            return ResponseEntity.ok(columns); // Devuelve las columnas
+            // Get the key for the DataSource
+            String key = dataSourceManager.getKey(this.credentials);
+            // Get the list of columns in the table
+            List<Map<String, Object>> columns = schemaDiscoveryService.listColumns(tableName, key);
+            return ResponseEntity.ok(columns);
         } catch (SQLException e) {
-            log.error("Error listing columns for table: {}", tableName, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+            log.error("SQL error listing columns for table: {}", tableName, e);
+            return handleException(e, "SQL error listing columns for table: ");
         } catch (Exception e) {
-
-            log.error("Credentials must be set before calling this method.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+            log.error("Error listing columns for table: {}", tableName, e);
+            return handleException(e, "Error listing columns for table: ");
         }
     }
 
+    /**
+     * Gets the data of a table with pagination using dynamic data sources and SchemaDiscoveryService.
+     *
+     * @param tableName The name of the table.
+     * @param page The page number.
+     * @param size The number of rows per page.
+     * @return ResponseEntity with the table data.
+     */
     @GetMapping("/data/{tableName}")
-    public ResponseEntity<?> getTableData(
+    public ResponseEntity<Map<String, Object>> getTableData(
             @PathVariable String tableName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        if (this.credentials == null) {
-            log.error("Credentials must be set before calling this method.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Credentials are not set");
+        // Validate the credentials
+        ResponseEntity<Map<String, Object>> errorResponse = validateCredentials();
+        if (errorResponse != null) {
+            return errorResponse;
         }
 
         try {
-            // Obtiene los datos de la tabla con paginación
+            // Get the table data with pagination
             ResponseEntity<DynamicTableData> responseEntity = schemaDiscoveryService.getTableDataWithPagination(tableName, this.credentials, page, size);
             DynamicTableData tableData = responseEntity.getBody();
-            //List<String> tableData = schemaDiscoveryService.getTableDataWithPagination(tableName, , page, size);
 
-
-            // Crea una respuesta que incluye los datos y la información de paginación
+            // Create a response map that includes the data and pagination information
             Map<String, Object> response = new HashMap<>();
             response.put("rows", tableData.getRows());
             response.put("columns", tableData.getColumns());
@@ -142,36 +161,84 @@ public class DatabaseNavigatorController {
             response.put("tableName", tableName);
 
             log.info("Table Response Data: {}", response);
-
-            // Devuelve la respuesta
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Error obtaining data from table: " + tableName, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving table data: " + e.getMessage());
+            log.error("Error obtaining data from table: {}", tableName, e);
+            return handleException(e, "Error obtaining data from table: ");
         }
     }
 
-
-
-
-    // Ejecuta una consulta
+    /**
+     * Executes a SQL query using dynamic data sources.
+     *
+     * @param query The SQL query to be executed.
+     * @return ResponseEntity with the query result.
+     */
     @PostMapping("/executeQuery")
     public ResponseEntity<List<Map<String, Object>>> executeQuery(@RequestBody String query) {
-        String key = dataSourceManager.getKey(this.credentials); // Obtiene la clave para el DataSource
-        JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key); // Se crea y prueba la conexión con las credenciales proporcionadas
+        // Validate the credentials
+        ResponseEntity<List<Map<String, Object>>> errorResponse = validateCredentials();
+        if (errorResponse != null) {
+            return errorResponse;
+        }
+
         try {
+            // Get the key for the DataSource
+            String key = dataSourceManager.getKey(this.credentials);
+            // Get the JdbcTemplate for the database
+            JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key);
+            // Execute the query and get the result
             List<Map<String, Object>> result = jdbcTemplate.queryForList(query);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            log.error("Error executing query", e.toString());
-            // Se debería manejar la excepción de manera más específica según el caso
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            log.error("Error executing query", e);
+            return handleException(e, "Error executing query: ");
         }
     }
 
+    /**
+     * Validates the provided database credentials.
+     *
+     * @param credentials The database credentials.
+     * @return True if the credentials are valid, false otherwise.
+     */
+    private boolean validateCredentials(DatabaseCredentials credentials) {
+        return credentials.getDatabaseName() != null && !credentials.getDatabaseName().isEmpty() &&
+                credentials.getHost() != null && !credentials.getHost().isEmpty() &&
+                credentials.getUserName() != null && !credentials.getUserName().isEmpty() &&
+                credentials.getPassword() != null && !credentials.getPassword().isEmpty();
+    }
 
-    // TODO: Implementar otros métodos para obtener información de la base de datos, como las vistas, procedimientos almacenados, etc.
-    // TODO: Implementar métodos para ejecutar consultas, insertar, actualizar y eliminar registros, etc.
-    // TODO: Implementar Metodos para cambiar el contexto para conectarme a otra base de datos con una nueva conexión o una existente en el contexto actual
-    // TODO: Implementar métodos para cerrar la conexión con la base de datos y liberar los recursos utilizados
+    /**
+     * Validates if credentials are set.
+     *
+     * @return ResponseEntity with an error message if credentials are not set, null otherwise.
+     */
+    private <T> ResponseEntity<T> validateCredentials() {
+        if (this.credentials == null) {
+            log.error("Credentials must be set before calling this method.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+        return null;
+    }
+
+    /**
+     * Handles exceptions based on the active environment.
+     *
+     * @param e The exception that occurred.
+     * @param message The message to log.
+     * @return ResponseEntity with the appropriate error message.
+     */
+    private <T> ResponseEntity<T> handleException(Exception e, String message) {
+        if ("prod".equals(environment.getProperty("spring.profiles.active"))) {
+            return (ResponseEntity<T>) ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyMap());
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body((T) (message + e.getMessage()));
+        }
+    }
+
+    // TODO: Implement additional methods to get information from the database, such as views, stored procedures, etc.
+    // TODO: Implement methods to execute queries, insert, update, and delete records, etc.
+    // TODO: Implement methods to change the context to connect to another database with a new connection or an existing one in the current context
+    // TODO: Implement methods to close the database connection and release resources used
 }
