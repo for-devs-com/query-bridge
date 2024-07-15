@@ -1,4 +1,4 @@
-package fordevs.dynamicqueryengine.dto;
+package com.fordevs.dynamicqueryengine.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

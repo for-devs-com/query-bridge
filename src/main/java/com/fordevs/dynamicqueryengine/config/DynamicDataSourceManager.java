@@ -1,8 +1,8 @@
-package fordevs.dynamicqueryengine.config;
+package com.fordevs.dynamicqueryengine.config;
 
+import com.fordevs.dynamicqueryengine.dto.DatabaseCredentials;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import fordevs.dynamicqueryengine.dto.DatabaseCredentials;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
