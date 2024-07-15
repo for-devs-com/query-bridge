@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>fordevs</groupId>
-    <artifactId>DynamicQueryEngine</artifactId>
+    <artifactId>dynamic-query-engine</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>DynamicQueryEngine</name>
     <description>DynamicQueryEngine</description>
