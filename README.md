@@ -1,94 +1,16 @@
 # Dynamic Query Engine
 
-## Project Structure
-```
-dynamic-query-engine/
-├── src/
-│ ├── main/
-│ │ ├── java/
-│ │ │ ├── fordevs/
-│ │ │ │ ├── dynamicqueryengine/
-│ │ │ │ │ ├── config/
-│ │ │ │ │ │ ├── DataSourceContextService.java
-│ │ │ │ │ │ ├── DynamicDataSourceManager.java
-│ │ │ │ │ │ ├── GlobalExceptionHandler.java
-│ │ │ │ │ │ ├── WebConfig.java
-│ │ │ │ │ ├── controller/
-│ │ │ │ │ │ ├── DatabaseNavigatorController.java
-│ │ │ │ │ ├── dto/
-│ │ │ │ │ │ ├── DatabaseCredentials.java
-│ │ │ │ │ │ ├── DynamicTableData.java
-│ │ │ │ │ ├── service/
-│ │ │ │ │ │ ├── DatabaseService.java
-│ │ │ │ │ │ ├── DatabaseServiceImpl.java
-│ │ │ │ │ │ ├── SchemaDiscoveryService.java
-│ │ │ │ │ ├── DynamicQueryEngineApplication.java
-│ │ ├── resources/
-│ │ │ ├── application.properties
-├── .gitignore
-├── mvnw
-├── mvnw.cmd
-├── pom.xml
-```
+Dynamic Query Engine (DQE) is a robust and flexible framework designed to facilitate dynamic database interactions through a set of RESTful APIs. It allows users to connect to various databases, execute queries, and retrieve data dynamically without hardcoding database configurations or query structures.
 
-## Technologies Used
+## Features
 
-- **Java**: The primary programming language for the application.
-- **Spring Boot**: A framework to simplify the creation of stand-alone, production-grade Spring-based applications.
-- **Spring Data JPA**: A part of the larger Spring Data family, makes it easier to implement JPA-based repositories.
-- **Spring Web**: To build web, including RESTful, applications using Spring MVC.
-- **Lombok**: A Java library that automatically plugs into your editor and build tools, to avoid writing boilerplate code.
-- **H2 Database**: An in-memory database used for development and testing.
-- **Maven**: A build automation tool used primarily for Java projects.
+- **Dynamic Database Connectivity**: Connect to different databases at runtime using provided credentials.
+- **Query Execution**: Execute SQL queries dynamically and retrieve results.
+- **Table and Column Discovery**: List tables and columns in the connected database.
+- **Data Retrieval**: Fetch data from tables with pagination support.
+- **Secure Query Handling**: Prevent SQL injection through rigorous input validation and prepared statements.
 
-## Explanation of the Code
-
-### Config Package
-- **DataSourceContextService.java**: Manages the current data source context, allowing dynamic switching between different data sources.
-- **DynamicDataSourceManager.java**: Manages dynamic data sources. Responsible for creating, testing, and managing connections to various databases.
-- **GlobalExceptionHandler.java**: Handles global exceptions across the application, providing centralized exception handling.
-- **WebConfig.java**: Configures web settings, including CORS configurations and other web-related settings.
-
-### Controller Package
-- **DatabaseNavigatorController.java**: REST controller that handles HTTP requests for database navigation. It delegates the actual business logic to the `DatabaseService`.
-
-### DTO Package
-- **DatabaseCredentials.java**: Data Transfer Object (DTO) that encapsulates database credentials like database name, host, username, and password.
-- **DynamicTableData.java**: DTO that represents dynamic table data, including rows, columns, and pagination information.
-
-### Service Package
-- **DatabaseService.java**: Interface for database-related operations. It provides method signatures for connecting to a database, listing tables and columns, getting table data with pagination, and executing SQL queries.
-- **DatabaseServiceImpl.java**: Implementation of the `DatabaseService` interface. Contains the business logic for database operations, including validation of credentials and handling exceptions.
-- **SchemaDiscoveryService.java**: Service that provides methods for discovering schema elements such as tables and columns in a database.
-
-### Main Application Class
-- **DynamicQueryEngineApplication.java**: The main application class that bootstraps the Spring Boot application.
-
-### Resources
-- **application.properties**: Configuration file for the Spring Boot application. Contains various properties for configuring the application.
-
-## How to Run the Project
-
-1. **Clone the repository**:
-    ```bash
-    git clone <repository-url>
-    cd dynamic-query-engine
-    ```
-
-2. **Build the project**:
-    ```bash
-    ./mvnw clean install
-    ```
-
-3. **Run the application**:
-    ```bash
-    ./mvnw spring-boot:run
-    ```
-
-4. **Access the application**:
-    - The application will be running at `http://localhost:8080`.
-
-## Endpoints
+## API Endpoints
 
 - **POST /api/connect-database**: Connects to the database using the provided credentials.
 - **GET /api/listTables**: Lists the tables in the connected database.
@@ -96,13 +18,63 @@ dynamic-query-engine/
 - **GET /api/data/{tableName}**: Retrieves the data of the specified table with pagination.
 - **POST /api/executeQuery**: Executes a SQL query and returns the result.
 
-## Contributing
+## How It Works
 
-1. **Fork the repository**.
-2. **Create a new branch** (`git checkout -b feature/your-feature`).
-3. **Commit your changes** (`git commit -am 'Add some feature'`).
-4. **Push to the branch** (`git push origin feature/your-feature`).
-5. **Create a new Pull Request**.
+1. **Dynamic Connection**: The engine establishes a connection to the database using credentials provided via API.
+2. **Query Execution**: Users can execute SQL queries dynamically. The engine validates and sanitizes these queries to prevent SQL injection.
+3. **Data Retrieval**: The results of the queries are returned in a structured format, allowing for easy integration with other applications.
+4. **Context Management**: The engine manages database contexts and connections efficiently using a thread-safe approach.
 
-## License
-Owned by for-devs. Still need to determine which license is best.
+## Security and Validation
+
+- **Input Validation**: Ensures that all SQL queries are validated to prevent SQL injection attacks.
+- **Prepared Statements**: Uses prepared statements to execute queries, enhancing security.
+- **Error Handling**: Provides detailed logging and error messages to aid in debugging and maintaining the application.
+
+## Usage
+
+To use the Dynamic Query Engine, you can send requests to the provided endpoints with the necessary parameters. Below is an example of how to connect to a database and execute a query:
+
+**Connecting to a Database**:
+```sh
+POST /api/connect-database
+{
+    "databaseName": "mydb",
+    "host": "localhost",
+    "port": 5432,
+    "userName": "user",
+    "password": "password"
+}
+````
+
+POST /api/executeQuery
+```
+SELECT * FROM my_table WHERE id = 1
+```
+
+
+## Postman Collection
+
+To help you get started with the Dynamic Query Engine (DQE) APIs, we have provided a Postman collection. You can use this collection to test the endpoints and see how the APIs work.
+
+### How to Use the Postman Collection
+
+1. Download the [Postman collection](./postman/DQE.postman_collection.json) file.
+2. Open Postman.
+3. Click on `Import` in the top-left corner.
+4. Select the `Upload Files` tab.
+5. Choose the downloaded JSON file and click `Open`.
+6. The collection will be imported into Postman, and you can start using the APIs.
+
+### License Discussion
+
+When you're ready to discuss which license to use for your software, consider the following common licenses and their purposes:
+
+1. **MIT License**: A permissive license that allows reuse with few restrictions.
+2. **Apache License 2.0**: Similar to the MIT License but includes provisions for patent rights.
+3. **GNU General Public License (GPL)**: Requires any distributed modifications to also be open-source.
+4. **BSD License**: Another permissive license with fewer restrictions.
+
+Each license has different implications for how others can use, modify, and distribute your software, so it's important to choose one that aligns with your goals for the project.
+
+Feel free to reach out whenever you're ready to discuss the licensing options!
