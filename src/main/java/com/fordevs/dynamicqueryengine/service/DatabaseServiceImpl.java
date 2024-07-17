@@ -1,9 +1,9 @@
-package fordevs.dynamicqueryengine.service;
+package com.fordevs.dynamicqueryengine.service;
 
-import fordevs.dynamicqueryengine.config.DataSourceContextService;
-import fordevs.dynamicqueryengine.config.DynamicDataSourceManager;
-import fordevs.dynamicqueryengine.dto.DatabaseCredentials;
-import fordevs.dynamicqueryengine.dto.DynamicTableData;
+import com.fordevs.dynamicqueryengine.config.DataSourceContextService;
+import com.fordevs.dynamicqueryengine.config.DynamicDataSourceManager;
+import com.fordevs.dynamicqueryengine.dto.DatabaseCredentials;
+import com.fordevs.dynamicqueryengine.dto.DynamicTableData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -11,11 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.stereotype.Service;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;

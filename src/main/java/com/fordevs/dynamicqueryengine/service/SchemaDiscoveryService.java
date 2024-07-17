@@ -1,8 +1,8 @@
-package fordevs.dynamicqueryengine.service;
+package com.fordevs.dynamicqueryengine.service;
 
-import fordevs.dynamicqueryengine.config.DynamicDataSourceManager;
-import fordevs.dynamicqueryengine.dto.DatabaseCredentials;
-import fordevs.dynamicqueryengine.dto.DynamicTableData;
+import com.fordevs.dynamicqueryengine.config.DynamicDataSourceManager;
+import com.fordevs.dynamicqueryengine.dto.DatabaseCredentials;
+import com.fordevs.dynamicqueryengine.dto.DynamicTableData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
