@@ -21,7 +21,6 @@ public class DatabaseNavigatorController {
 
     @Autowired
     private DatabaseService databaseService;
-
     /**
      * Connects to the database using dynamic data sources.
      *
