@@ -1,7 +1,6 @@
-package fordevs.dynamicqueryengine.service;
+package com.fordevs.dynamicqueryengine.service;
 
-import fordevs.dynamicqueryengine.dto.DatabaseCredentials;
-import fordevs.dynamicqueryengine.dto.DynamicTableData;
+import com.fordevs.dynamicqueryengine.dto.DatabaseCredentials;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
