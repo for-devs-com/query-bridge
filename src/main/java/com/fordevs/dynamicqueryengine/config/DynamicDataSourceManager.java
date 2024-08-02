@@ -22,9 +22,6 @@ public class DynamicDataSourceManager {
     // Cache to store JdbcTemplate instances by their key
     private final Map<String, JdbcTemplate> dataSourceCache = new ConcurrentHashMap<>();
 
-//    @Autowired
-//    private DataSourceContextService dataSourceContextService;
-
     /**
      * Creates and tests a new database connection using the provided credentials.
      *
@@ -82,8 +79,21 @@ public class DynamicDataSourceManager {
      */
     private DataSource createDataSource(DatabaseCredentials credentials) {
         HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setDriverClassName("org.postgresql.Driver"); // TODO: Support other databases and change Driver Dynamically
-        hikariConfig.setJdbcUrl("jdbc:postgresql://" + credentials.getHost() + ":" + credentials.getPort() + "/" + credentials.getDatabaseName());
+        String jdbcUrl;
+        switch (credentials.getDatabaseType().toLowerCase()) {
+            case "postgresql":
+                hikariConfig.setDriverClassName("org.postgresql.Driver");
+                jdbcUrl = "jdbc:postgresql://" + credentials.getHost() + ":" + credentials.getPort() + "/" + credentials.getDatabaseName();
+                break;
+            case "mysql":
+                hikariConfig.setDriverClassName("com.mysql.cj.jdbc.Driver");
+                jdbcUrl = "jdbc:mysql://" + credentials.getHost() + ":" + credentials.getPort() + "/" + credentials.getDatabaseName();
+                break;
+            // Add more cases for different databases as needed
+            default:
+                throw new UnsupportedOperationException("Unsupported database type: " + credentials.getDatabaseType());
+        }
+        hikariConfig.setJdbcUrl(jdbcUrl);
         hikariConfig.setUsername(credentials.getUserName());
         hikariConfig.setPassword(credentials.getPassword());
         return new HikariDataSource(hikariConfig);
@@ -97,7 +107,7 @@ public class DynamicDataSourceManager {
      */
     private String generateKeyForUserDataSource(DatabaseCredentials credentials) {
         // TODO: Implement a better key generation
-        return credentials.getDatabaseManager() + "-" + credentials.getHost() + "-" + credentials.getPort() + "-" + credentials.getDatabaseName() + "-" + credentials.getUserName() + "-" + credentials.getPassword();
+        return credentials.getDatabaseType() + "-" + credentials.getHost() + "-" + credentials.getPort() + "-" + credentials.getDatabaseName() + "-" + credentials.getUserName() + "-" + credentials.getPassword();
     }
 
     /**
