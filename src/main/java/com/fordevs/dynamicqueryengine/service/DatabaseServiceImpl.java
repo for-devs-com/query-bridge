@@ -43,7 +43,7 @@ public class DatabaseServiceImpl implements DatabaseService {
     private DatabaseCredentials databaseCredentials;
 
     @Override
-    public ResponseEntity<String> connectToDatabaseDynamically(DatabaseCredentials databaseCredentials) {
+    public ResponseEntity<String> setDatabaseConnection(DatabaseCredentials databaseCredentials) {
         // Validate the provided credentials
         if (!validateCredentials(databaseCredentials)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid credentials provided");
