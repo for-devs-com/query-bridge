@@ -17,7 +17,7 @@ public interface DatabaseService {
      * @param databaseCredentials The database credentials provided in the request body.
      * @return ResponseEntity with connection status.
      */
-    ResponseEntity<String> connectToDatabaseDynamically(DatabaseCredentials databaseCredentials);
+    ResponseEntity<String> setDatabaseConnection(DatabaseCredentials databaseCredentials);
 
     /**
      * Lists the tables in the database.

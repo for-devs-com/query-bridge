@@ -28,8 +28,8 @@ public class DatabaseNavigatorController {
      * @return ResponseEntity with connection status.
      */
     @PostMapping("/connect")
-    public ResponseEntity<String> connectToDatabaseDynamically(@RequestBody DatabaseCredentials databaseCredentials) {
-        return databaseService.connectToDatabaseDynamically(databaseCredentials);
+    public ResponseEntity<String> setDatabaseConnection(@RequestBody DatabaseCredentials databaseCredentials) {
+        return databaseService.setDatabaseConnection(databaseCredentials);
     }
 
     /**
