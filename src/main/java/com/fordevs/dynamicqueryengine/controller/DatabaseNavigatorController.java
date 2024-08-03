@@ -16,7 +16,7 @@ import java.util.Map;
 @Slf4j
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/database")
 public class DatabaseNavigatorController {
 
     @Autowired
@@ -27,9 +27,9 @@ public class DatabaseNavigatorController {
      * @param databaseCredentials The database credentials provided in the request body.
      * @return ResponseEntity with connection status.
      */
-    @PostMapping("/connect-database")
-    public ResponseEntity<String> connectToDatabaseDynamically(@RequestBody DatabaseCredentials databaseCredentials) {
-        return databaseService.connectToDatabaseDynamically(databaseCredentials);
+    @PostMapping("/connect")
+    public ResponseEntity<String> setDatabaseConnection(@RequestBody DatabaseCredentials databaseCredentials) {
+        return databaseService.setDatabaseConnection(databaseCredentials);
     }
 
     /**
@@ -75,7 +75,7 @@ public class DatabaseNavigatorController {
      * @param query The SQL query to be executed.
      * @return ResponseEntity with the query result.
      */
-    @PostMapping("/executeQuery")
+    @PostMapping("/execute/query")
     public ResponseEntity<List<Map<String, Object>>> executeQuery(@RequestBody String query) {
         return databaseService.executeQuery(query);
     }

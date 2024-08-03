@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DatabaseCredentials {
-    private String databaseManager;
+    private String databaseType;
     private String host;
-    private Integer port;
+    private int port; //use `int` when a value cannot be `null`
     private String databaseName;
     private String userName;
     private String password;
