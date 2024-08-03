@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,6 +23,18 @@ public class DynamicDataSourceManager {
     // Cache to store JdbcTemplate instances by their key
     private final Map<String, JdbcTemplate> dataSourceCache = new ConcurrentHashMap<>();
 
+    // Database drivers and URLs
+    private static final Map<String, String> DRIVER_MAP = new HashMap<>();
+    static {
+        DRIVER_MAP.put("postgresql", "org.postgresql.Driver");
+        DRIVER_MAP.put("mysql", "com.mysql.cj.jdbc.Driver");
+        DRIVER_MAP.put("mariadb", "org.mariadb.jdbc.Driver");
+        DRIVER_MAP.put("sqlserver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        DRIVER_MAP.put("oracle", "oracle.jdbc.OracleDriver");
+        DRIVER_MAP.put("db2", "com.ibm.db2.jcc.DB2Driver");
+        DRIVER_MAP.put("mongodb", "mongodb.jdbc.MongoDriver");
+        // Agregar más entradas según sea necesario
+    }
     /**
      * Creates and tests a new database connection using the provided credentials.
      *
@@ -79,21 +92,14 @@ public class DynamicDataSourceManager {
      */
     private DataSource createDataSource(DatabaseCredentials credentials) {
         HikariConfig hikariConfig = new HikariConfig();
-        String jdbcUrl;
-        switch (credentials.getDatabaseType().toLowerCase()) {
-            case "postgresql":
-                hikariConfig.setDriverClassName("org.postgresql.Driver");
-                jdbcUrl = "jdbc:postgresql://" + credentials.getHost() + ":" + credentials.getPort() + "/" + credentials.getDatabaseName();
-                break;
-            case "mysql":
-                hikariConfig.setDriverClassName("com.mysql.cj.jdbc.Driver");
-                jdbcUrl = "jdbc:mysql://" + credentials.getHost() + ":" + credentials.getPort() + "/" + credentials.getDatabaseName();
-                break;
-            // Add more cases for different databases as needed
-            default:
-                throw new UnsupportedOperationException("Unsupported database type: " + credentials.getDatabaseType());
+
+        // Set the driver class name based on the database type
+        String driverClassName = DRIVER_MAP.get(credentials.getDatabaseType().toLowerCase());
+        if (driverClassName == null) {
+            throw new IllegalArgumentException("Unsupported database type: " + credentials.getDatabaseType());
         }
-        hikariConfig.setJdbcUrl(jdbcUrl);
+        hikariConfig.setDriverClassName(driverClassName);
+        hikariConfig.setJdbcUrl("jdbc:" + credentials.getDatabaseType() + "://" + credentials.getHost() + ":" + credentials.getPort() + "/" + credentials.getDatabaseName());
         hikariConfig.setUsername(credentials.getUserName());
         hikariConfig.setPassword(credentials.getPassword());
         return new HikariDataSource(hikariConfig);
