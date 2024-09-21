@@ -16,7 +16,7 @@ import java.util.Map;
 @Slf4j
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
-@RequestMapping("/api/database")
+@RequestMapping("/query/bridge/database")
 public class DatabaseNavigatorController {
 
     @Autowired
