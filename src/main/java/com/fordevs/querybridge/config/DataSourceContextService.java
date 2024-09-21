@@ -1,4 +1,4 @@
-package com.fordevs.dynamicqueryengine.config;
+package com.fordevs.querybridge.config;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;

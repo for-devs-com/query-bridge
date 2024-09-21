@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "2578659a-e418-4857-8a60-3735cd584013",
-		"name": "DQE-dynamic-query-engine",
+		"name": "query-bridge",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5777748",
 		"_collection_link": "https://for-devs.postman.co/workspace/for-devs~2ad6862d-b69c-4a14-b952-4b344c3033ca/collection/20133029-2578659a-e418-4857-8a60-3735cd584013?action=share&source=collection_link&creator=5777748"

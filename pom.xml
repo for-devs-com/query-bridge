@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>fordevs</groupId>
-    <artifactId>dynamic-query-engine</artifactId>
+    <artifactId>query-bridge</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>DynamicQueryEngine</name>
-    <description>DynamicQueryEngine</description>
+    <name>QueryBridge</name>
+    <description>QueryBridge</description>
     <properties>
         <java.version>17</java.version>
     </properties>

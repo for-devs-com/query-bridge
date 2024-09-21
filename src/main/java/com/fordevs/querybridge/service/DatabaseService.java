@@ -1,6 +1,6 @@
-package com.fordevs.dynamicqueryengine.service;
+package com.fordevs.querybridge.service;
 
-import com.fordevs.dynamicqueryengine.dto.DatabaseCredentials;
+import com.fordevs.querybridge.dto.DatabaseCredentials;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;

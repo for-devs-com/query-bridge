@@ -1,7 +1,7 @@
-package com.fordevs.dynamicqueryengine.controller;
+package com.fordevs.querybridge.controller;
 
-import com.fordevs.dynamicqueryengine.dto.DatabaseCredentials;
-import com.fordevs.dynamicqueryengine.service.DatabaseService;
+import com.fordevs.querybridge.dto.DatabaseCredentials;
+import com.fordevs.querybridge.service.DatabaseService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

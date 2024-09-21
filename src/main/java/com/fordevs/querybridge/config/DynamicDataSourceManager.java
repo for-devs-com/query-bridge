@@ -1,6 +1,6 @@
-package com.fordevs.dynamicqueryengine.config;
+package com.fordevs.querybridge.config;
 
-import com.fordevs.dynamicqueryengine.dto.DatabaseCredentials;
+import com.fordevs.querybridge.dto.DatabaseCredentials;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;

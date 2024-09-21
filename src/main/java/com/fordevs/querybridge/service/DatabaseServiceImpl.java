@@ -1,9 +1,9 @@
-package com.fordevs.dynamicqueryengine.service;
+package com.fordevs.querybridge.service;
 
-import com.fordevs.dynamicqueryengine.config.DataSourceContextService;
-import com.fordevs.dynamicqueryengine.config.DynamicDataSourceManager;
-import com.fordevs.dynamicqueryengine.dto.DatabaseCredentials;
-import com.fordevs.dynamicqueryengine.dto.DynamicTableData;
+import com.fordevs.querybridge.config.DataSourceContextService;
+import com.fordevs.querybridge.config.DynamicDataSourceManager;
+import com.fordevs.querybridge.dto.DatabaseCredentials;
+import com.fordevs.querybridge.dto.DynamicTableData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
