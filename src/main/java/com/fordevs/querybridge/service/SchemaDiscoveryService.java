@@ -1,7 +1,7 @@
 package com.fordevs.querybridge.service;
 
 import com.fordevs.querybridge.config.DynamicDataSourceManager;
-import com.fordevs.querybridge.dto.DatabaseCredentials;
+import com.fordevs.querybridge.dto.DatabaseConnectionRequest;
 import com.fordevs.querybridge.dto.DynamicTableData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -33,7 +33,7 @@ public class SchemaDiscoveryService {
      * Obtiene la lista de tablas de la base de datos  y la devuelve como una lista de cadenas de texto
      * con el nombre de las tablas encontradas en la base de datos
      */
-    public List<String> listTables(DatabaseCredentials credentials) throws DataAccessException, SQLException {
+    public List<String> listTables(DatabaseConnectionRequest credentials) throws DataAccessException, SQLException {
         String key = dataSourceManager.getKey(credentials);
         JdbcTemplate jdbcTemplate = dataSourceManager.getJdbcTemplateForDb(key);
 
@@ -83,7 +83,7 @@ public class SchemaDiscoveryService {
     /**
      * Obtiene los datos de una tabla con paginación y el conteo total de filas.
      */
-    public ResponseEntity<DynamicTableData> getTableDataWithPagination(String tableName, DatabaseCredentials credentials, int page, int size) throws SQLException {
+    public ResponseEntity<DynamicTableData> getTableDataWithPagination(String tableName, DatabaseConnectionRequest credentials, int page, int size) throws SQLException {
         try {
 
             String key = dataSourceManager.getKey(credentials);

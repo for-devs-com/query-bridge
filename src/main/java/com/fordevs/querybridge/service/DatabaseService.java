@@ -1,6 +1,6 @@
 package com.fordevs.querybridge.service;
 
-import com.fordevs.querybridge.dto.DatabaseCredentials;
+import com.fordevs.querybridge.dto.DatabaseConnectionRequest;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -14,10 +14,10 @@ public interface DatabaseService {
     /**
      * Connects to the database using dynamic data sources.
      *
-     * @param databaseCredentials The database credentials provided in the request body.
+     * @param databaseConnectionRequest The database credentials provided in the request body.
      * @return ResponseEntity with connection status.
      */
-    ResponseEntity<String> setDatabaseConnection(DatabaseCredentials databaseCredentials);
+    ResponseEntity<String> setDatabaseConnection(DatabaseConnectionRequest databaseConnectionRequest);
 
     /**
      * Lists the tables in the database.

@@ -2,7 +2,7 @@ package com.fordevs.querybridge.service;
 
 import com.fordevs.querybridge.config.DataSourceContextService;
 import com.fordevs.querybridge.config.DynamicDataSourceManager;
-import com.fordevs.querybridge.dto.DatabaseCredentials;
+import com.fordevs.querybridge.dto.DatabaseConnectionRequest;
 import com.fordevs.querybridge.dto.DynamicTableData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,32 +40,32 @@ public class DatabaseServiceImpl implements DatabaseService {
     @Autowired
     private Environment environment;
 
-    private DatabaseCredentials databaseCredentials;
+    private DatabaseConnectionRequest databaseConnectionRequest;
 
     @Override
-    public ResponseEntity<String> setDatabaseConnection(DatabaseCredentials databaseCredentials) {
+    public ResponseEntity<String> setDatabaseConnection(DatabaseConnectionRequest databaseConnectionRequest) {
         // Validate the provided credentials
-        if (!validateCredentials(databaseCredentials)) {
+        if (!validateCredentials(databaseConnectionRequest)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid credentials provided");
         }
 
-        this.databaseCredentials = databaseCredentials; // Store the credentials for future use
+        this.databaseConnectionRequest = databaseConnectionRequest; // Store the credentials for future use
 
         try {
             // Try to create and test a database connection with the provided credentials.
             // The createAndTestConnection method returns true if the connection is successful.
             // The '!' operator inverts the result, so this condition is true if the connection fails.
-            if (!dynamicDataSourceManager.createAndTestConnection(databaseCredentials)) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to connect to database: " + databaseCredentials.getDatabaseName());
+            if (!dynamicDataSourceManager.createAndTestConnection(databaseConnectionRequest)) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to connect to database: " + databaseConnectionRequest.getDatabaseName());
             }
 
             // Retrieve the key for the DataSource
-            String dataSourceKey = dynamicDataSourceManager.getKey(databaseCredentials);
+            String dataSourceKey = dynamicDataSourceManager.getKey(databaseConnectionRequest);
             // Retrieve the JdbcTemplate for the database
             JdbcTemplate jdbcTemplate = dynamicDataSourceManager.getJdbcTemplateForDb(dataSourceKey);
             // Set the current JdbcTemplate in the data source context
             DataSourceContextService.setCurrentTemplate(jdbcTemplate);
-            return ResponseEntity.ok("Connected successfully to database: " + databaseCredentials.getDatabaseName());
+            return ResponseEntity.ok("Connected successfully to database: " + databaseConnectionRequest.getDatabaseName());
         } catch (Exception e) {
             log.error("Error connecting to the database", e);
             return handleException(e, "Error connecting to the database: ");
@@ -75,14 +75,14 @@ public class DatabaseServiceImpl implements DatabaseService {
     @Override
     public ResponseEntity<List<String>> listTables() {
         // Check if credentials are set
-        if (this.databaseCredentials == null) {
+        if (this.databaseConnectionRequest == null) {
             log.error("Credentials must be set before calling this method.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
 
         try {
             // Get the list of tables in the database
-            List<String> tables = schemaDiscoveryService.listTables(this.databaseCredentials);
+            List<String> tables = schemaDiscoveryService.listTables(this.databaseConnectionRequest);
             log.info("Tables: {}", tables);
             return ResponseEntity.ok(tables);
         } catch (Exception e) {
@@ -94,14 +94,14 @@ public class DatabaseServiceImpl implements DatabaseService {
     @Override
     public ResponseEntity<List<Map<String, Object>>> listColumns(String tableName) {
         // Check if credentials are set
-        if (this.databaseCredentials == null) {
+        if (this.databaseConnectionRequest == null) {
             log.error("Credentials must be set before calling this method.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
 
         try {
             // Retrieve the key for the DataSource
-            String dataSourceKey = dynamicDataSourceManager.getKey(this.databaseCredentials);
+            String dataSourceKey = dynamicDataSourceManager.getKey(this.databaseConnectionRequest);
             // Get the list of columns in the specified table
             List<Map<String, Object>> columns = schemaDiscoveryService.listColumns(tableName, dataSourceKey);
             return ResponseEntity.ok(columns);
@@ -117,14 +117,14 @@ public class DatabaseServiceImpl implements DatabaseService {
     @Override
     public ResponseEntity<Map<String, Object>> getTableData(String tableName, int page, int size) {
         // Check if credentials are set
-        if (this.databaseCredentials == null) {
+        if (this.databaseConnectionRequest == null) {
             log.error("Credentials must be set before calling this method.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
 
         try {
             // Retrieve table data with pagination
-            ResponseEntity<DynamicTableData> responseEntity = schemaDiscoveryService.getTableDataWithPagination(tableName, this.databaseCredentials, page, size);
+            ResponseEntity<DynamicTableData> responseEntity = schemaDiscoveryService.getTableDataWithPagination(tableName, this.databaseConnectionRequest, page, size);
             DynamicTableData tableData = responseEntity.getBody();
 
             // Create a response map that includes the data and pagination information
@@ -148,7 +148,7 @@ public class DatabaseServiceImpl implements DatabaseService {
     public ResponseEntity<List<Map<String, Object>>> executeQuery(String query) {
         // Check if credentials are set
         // If the database credentials are not set, log an error and return an INTERNAL_SERVER_ERROR response.
-        if (this.databaseCredentials == null) {
+        if (this.databaseConnectionRequest == null) {
             log.error("Credentials must be set before calling this method.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
@@ -167,7 +167,7 @@ public class DatabaseServiceImpl implements DatabaseService {
 
             // Retrieve the key for the DataSource
             // Get the unique key for the current database credentials.
-            String dataSourceKey = dynamicDataSourceManager.getKey(this.databaseCredentials);
+            String dataSourceKey = dynamicDataSourceManager.getKey(this.databaseConnectionRequest);
 
             // Retrieve the JdbcTemplate for the database
             // Get the JdbcTemplate instance for the specified dataSourceKey.
@@ -211,11 +211,11 @@ public class DatabaseServiceImpl implements DatabaseService {
     /**
      * Validates the provided database credentials.
      *
-     * @param databaseCredentials The database credentials.
+     * @param databaseConnectionRequest The database credentials.
      * @return True if the credentials are valid, false otherwise.
      */
-    private boolean validateCredentials(DatabaseCredentials databaseCredentials) {
-        return databaseCredentials.getDatabaseName() != null && !databaseCredentials.getDatabaseName().isEmpty() && databaseCredentials.getHost() != null && !databaseCredentials.getHost().isEmpty() && databaseCredentials.getUserName() != null && !databaseCredentials.getUserName().isEmpty() && databaseCredentials.getPassword() != null && !databaseCredentials.getPassword().isEmpty();
+    private boolean validateCredentials(DatabaseConnectionRequest databaseConnectionRequest) {
+        return databaseConnectionRequest.getDatabaseName() != null && !databaseConnectionRequest.getDatabaseName().isEmpty() && databaseConnectionRequest.getHost() != null && !databaseConnectionRequest.getHost().isEmpty() && databaseConnectionRequest.getUserName() != null && !databaseConnectionRequest.getUserName().isEmpty() && databaseConnectionRequest.getPassword() != null && !databaseConnectionRequest.getPassword().isEmpty();
     }
 
     /**

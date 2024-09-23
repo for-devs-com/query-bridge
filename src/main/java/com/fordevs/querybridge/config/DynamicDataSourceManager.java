@@ -1,6 +1,6 @@
 package com.fordevs.querybridge.config;
 
-import com.fordevs.querybridge.dto.DatabaseCredentials;
+import com.fordevs.querybridge.dto.DatabaseConnectionRequest;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,7 @@ public class DynamicDataSourceManager {
      * @param credentials the database credentials
      * @return true if the connection is successful, false otherwise
      */
-    public boolean createAndTestConnection(DatabaseCredentials credentials) {
+    public boolean createAndTestConnection(DatabaseConnectionRequest credentials) {
         String key = generateKeyForUserDataSource(credentials);
         JdbcTemplate jdbcTemplate = dataSourceCache.computeIfAbsent(key, k -> {
             DataSource dataSource = createDataSource(credentials);
@@ -90,7 +90,7 @@ public class DynamicDataSourceManager {
      * @param credentials the database credentials
      * @return the created DataSource
      */
-    private DataSource createDataSource(DatabaseCredentials credentials) {
+    private DataSource createDataSource(DatabaseConnectionRequest credentials) {
         HikariConfig hikariConfig = new HikariConfig();
 
         // Set the driver class name based on the database type
@@ -111,7 +111,7 @@ public class DynamicDataSourceManager {
      * @param credentials the database credentials
      * @return the generated key
      */
-    private String generateKeyForUserDataSource(DatabaseCredentials credentials) {
+    private String generateKeyForUserDataSource(DatabaseConnectionRequest credentials) {
         // TODO: Implement a better key generation
         return credentials.getDatabaseType() + "-" + credentials.getHost() + "-" + credentials.getPort() + "-" + credentials.getDatabaseName() + "-" + credentials.getUserName() + "-" + credentials.getPassword();
     }
@@ -138,7 +138,7 @@ public class DynamicDataSourceManager {
      * @param credentials the database credentials
      * @return the generated key
      */
-    public String getKey(DatabaseCredentials credentials) {
+    public String getKey(DatabaseConnectionRequest credentials) {
         return generateKeyForUserDataSource(credentials);
     }
 }

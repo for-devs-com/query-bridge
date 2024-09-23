@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class DatabaseCredentials {
+public class DatabaseConnectionRequest {
     private String databaseType;
     private String host;
     private int port; //use `int` when a value cannot be `null`

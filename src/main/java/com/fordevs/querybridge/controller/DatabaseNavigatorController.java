@@ -1,6 +1,6 @@
 package com.fordevs.querybridge.controller;
 
-import com.fordevs.querybridge.dto.DatabaseCredentials;
+import com.fordevs.querybridge.dto.DatabaseConnectionRequest;
 import com.fordevs.querybridge.service.DatabaseService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +24,12 @@ public class DatabaseNavigatorController {
     /**
      * Connects to the database using dynamic data sources.
      *
-     * @param databaseCredentials The database credentials provided in the request body.
+     * @param databaseConnectionRequest The database credentials provided in the request body.
      * @return ResponseEntity with connection status.
      */
     @PostMapping("/connect")
-    public ResponseEntity<String> setDatabaseConnection(@RequestBody DatabaseCredentials databaseCredentials) {
-        return databaseService.setDatabaseConnection(databaseCredentials);
+    public ResponseEntity<String> setDatabaseConnection(@RequestBody DatabaseConnectionRequest databaseConnectionRequest) {
+        return databaseService.setDatabaseConnection(databaseConnectionRequest);
     }
 
     /**
