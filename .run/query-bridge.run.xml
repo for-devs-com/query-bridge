@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="QueryBridgeApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+  <configuration default="false" name="query-bridge" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
     <module name="query-bridge" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="com.fordevs.querybridge.QueryBridgeApplication" />
     <method v="2">
